@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JakDojadę do Giebułtowa</title>
+  <link rel="stylesheet" href="jquery-ui.min.css">
+  <script src="jquery-3.3.1.min.js"></script>
+  <script src="jquery-ui.min.js"></script>
+
+  <style>
+	#L {
+		position:absolute;
+		left:5px;
+		top:0px;
+		width: 60%;
+	}
+	#R {
+		position:absolute;
+		right:5px;
+		top:0px;
+	}
+	.btn {
+		background-color: #007fff; /* 4CAF50 Green */
+		border: none;
+		border-radius: 4px;
+		color: white;
+		padding: 22px 32px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
+		margin: 4px 2px;
+		cursor: pointer;
+		width: 100%;
+		-webkit-transition-duration: 0.4s; /* Safari */
+		transition-duration: 0.4s;
+		font-family:"Verdana"; 
+		font-size:120%;
+	}
+	.radios {
+		margin-inline-start: 0px;
+		margin-inline-end: 0px;
+		margin: 4px 2px;
+		padding-inline-start: 0px;
+		padding-block-start: 0px;
+		padding-inline-end: 0px;
+		padding-block-end: 0px;
+		border: none;
+	}
+	.result {
+		margin: 80px 0px;
+	}
+	.body { 
+		font-family:"Verdana"; 
+	}
+  </style>
+
+  
+<script>
+var loc = [];const LAT = 0;	const LON = 1;
+const D17 = 0; 	loc[D17] = ["50.068107", "19.912734"];
+const G = 1; 	loc[G]   = ["50.141699", "19.884018"];
+const F = 2; 	loc[F]   = ["50.129846", "19.916607"];
+const J = 3; 	loc[J]   = ["50.112828", "19.898339"];
+const GPS=4;	loc[GPS] = ["",""];
+const rc = 1;	// routes count
+
+// AJAX dla jednej zakładki
+function LoadPanel (ktoryTab, Skad, Dokad, Data)
+{
+console.log("LoadPanel "+ktoryTab);
+// usunąłem z beforeSend
+// request.setRequestHeader("X-jd-sign:AnutaDersdwZ9krv3VPTNP85AE94wBlci4v3O8t0AsgnUiD3GbnziQQqy5_5cnyLNT0Gzw7OexOlbtdq_GPFXA");
+// request.setRequestHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36");
+// request.setRequestHeader("Accept-Encoding", "gzip, deflate, br");
+
+$.ajax({
+    type: "POST",
+    contentType: "application/json; charset=utf-8",
+    beforeSend: function(request) {
+      request.setRequestHeader("X-jd-security-version", "2");
+      request.setRequestHeader("X-jd-timestamp", "1540682862");
+      request.setRequestHeader("X-jd-param-locale", "en");
+      request.setRequestHeader("X-jd-param-appV", "web");
+      request.setRequestHeader("X-jd-param-profile-login", "jda-d7f0ab6b-ee83-4bcd-9652-872d5a85de16WCX166baGbDT4a7cc63a");
+      request.setRequestHeader("Accept", "application/json");
+      
+      request.setRequestHeader("X-jd-param-user-device-id", "1540681904433_0.34388369872530977_jakdojade");
+      request.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+    },
+    url: "https://jakdojade.pl/api/jd/v1/routes",
+    data: JSON.stringify({
+      "searchQuery": {
+        "routesCount": rc,
+        "start": {
+          "regionSymbol": "KRAKOW",
+          "coordinate": {
+            "x_lon": loc[Skad][LON],
+            "y_lat": loc[Skad][LAT]
+          },
+          "locationType": "LOCATION_TYPE_POI"
+        },
+        "destination": {
+          "regionSymbol": "KRAKOW",
+          "coordinate": {
+            "x_lon": loc[Dokad][LON],
+            "y_lat": loc[Dokad][LAT]
+          },
+          "locationType": "LOCATION_TYPE_STOP",
+          "stopName": "MÓJ CEL"
+        },
+        "timeOptions": {
+          "dateTime": Data,
+          "queryTimeType": "DEPARTURE"
+        },
+        "allowedRouteTypes": ["PUBLIC_TRANSPORT"],
+        "publicTransportOptions": {
+          "avoidChanges": "DEFAULT",
+          "accessibilityOptions": "NONE"
+        },
+        "userConnectionTypePreference": "OPTIMAL"
+      },
+      "fetchType": "SYNC",
+      "userLocation": {},
+      "routesCorrelation": "NONE"
+    }),
+    processData: false
+})
+.done(function(response) {
+ 	console.log(response);
+	$( ktoryTab ).html(response.routes[0].routeDescription);
+})
+.fail(function(xhr, status, errorThrown) {
+    console.warn( "Wystąpił błąd w połączeniu");
+	console.log( "Error: " + errorThrown );
+    console.log( "Status: " + status );
+    console.dir( xhr );
+})
+.always(function() {
+    console.log("ładuję");
+});
+}
+
+// ON BUTTON CLICK - REFRESH
+function refresh ()
+{
+	$( "#refresh" ).animate({
+          backgroundColor: "#aa0000",
+          color: "#fff"
+        }, 50 );
+
+	var d = new Date();
+	var t = d.toISOString().substr(0,19)
+		+ d.toString().substr(d.toString().indexOf('+'),3) + ":00";  //"2018-11-03T11:30:00+03:00"
+	var skad;	
+	if (document.getElementById("radio-1").checked == true)
+		skad = GPS;
+	else
+		skad = D17;
+	
+	LoadPanel ("#tabs-1", skad, G, t);
+	LoadPanel ("#tabs-2", skad, F, t);
+	LoadPanel ("#tabs-3", skad, J, t);
+	
+	$( "#refresh" ).animate({
+          backgroundColor: "#007fff",
+          color: "#fff"
+        }, 50 );
+}
+
+// PLUGIN RADIO BUTTONSET VERTICAL 
+(function( $ ){
+$.fn.buttonsetv = function() {
+  $(':radio, :checkbox', this).wrap('<div style="margin: 1px"/>');
+  $(this).buttonset();
+  $('label:first', this).removeClass('ui-corner-left').addClass('ui-corner-top');
+  $('label:last', this).removeClass('ui-corner-right').addClass('ui-corner-bottom');
+  var maxWidth = 0; // max witdh
+  $('label', this).each(function(index){
+     var labelWidth = $(this).width();
+     if (labelWidth > maxWidth ) maxWidth = labelWidth ; 
+  })
+  $('label', this).each(function(index){
+    $(this).width(maxWidth);
+  })
+};
+})( jQuery );
+
+// INITIALIZE AFTER PAGE LOAD
+$(document).ready(function() {
+	$( "input" ).checkboxradio();
+	$("#vert").buttonsetv();
+	$( "#tabs" ).tabs();
+	$('body').hide().fadeIn(1000);
+});
+
+</script>
+ 
+</head>
+
+<body>
+<div id="L">
+	<button class="btn" id="refresh" onclick="refresh()">ODŚWIEŻ</button>
+</div>
+
+<div id="R">
+	<div class="widget">
+		<fieldset class="radios">
+			<div id="vert">
+				<label for="radio-1">GPS</label>
+				<input type="radio" name="radio-1" id="radio-1">
+				<label for="radio-2">D-17</label>
+				<input type="radio" name="radio-1" id="radio-2" checked>
+			</div>
+		</fieldset>
+	</div>
+</div>
+
+<div class="result" id="tabs">
+  <ul>
+    <li><a href="#tabs-1">Giebułtów</a></li>
+    <li><a href="#tabs-2">Fryzjer</a></li>
+    <li><a href="#tabs-3">Jubilat</a></li>
+  </ul>
+  <div id="tabs-1">
+    <p>?</p>
+  </div>
+  <div id="tabs-2">
+    <p>?</p>
+  </div>
+  <div id="tabs-3">
+    <p>?</p>
+  </div>
+</div>
+
+</div>
+
+</body>
+</html>
