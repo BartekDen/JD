@@ -9,6 +9,7 @@
   <script src="jquery-ui.min.js"></script>
 
   <style>
+
 	#L {
 		position:absolute;
 		left:5px;
@@ -66,9 +67,64 @@ const J = 3; 	loc[J]   = ["50.112828", "19.898339"];
 const GPS=4;	loc[GPS] = ["",""];
 const rc = 1;	// routes count
 
+// wyświetla komunikat (działa .text - a nie działa .html?)
+function Dialog(txt) {
+	$( "#msgtxt" ).text(txt);
+    $( "#dialog" ).dialog({
+      modal: true,
+	  show: { effect: "explode", duration: 500 },
+	  buttons: { OK: function() { $( this ).dialog( "close" ); } }
+    });
+}
+
+// pobiera lokalizację GPS i aktualizuje trasy
+function UpdateGPS() {
+    if (navigator.geolocation) {
+	    navigator.geolocation.getCurrentPosition(setPosition, showError);	// typowy callback!
+    } else { 
+        Dialog("Przeglądarka nie wspiera geolokacji.");
+    }	
+}
+
+// funkcja wołana, gdy uda się lokalizacja
+function setPosition(position) {				
+	loc[GPS][LAT] = position.coords.latitude;
+	loc[GPS][LON] = position.coords.longitude;
+    console.log (position.coords.latitude + " " + position.coords.longitude);
+	var t = getDate();
+	LoadPanel ("#tabs-1", GPS, G, t);
+	LoadPanel ("#tabs-2", GPS, F, t);
+	LoadPanel ("#tabs-3", GPS, J, t);
+}
+
+// funkcja wołana, gdy NIE uda się lokalizacja
+function showError(error) {
+    switch(error.code) {
+        case error.PERMISSION_DENIED:
+            Dialog("Użytkownik odmówił geolokalizacji.");
+            break;
+        case error.POSITION_UNAVAILABLE:
+            Dialog("Dane o geolokalizacji niedostępne.");
+            break;
+        case error.TIMEOUT:
+            Dialog("Timeout - brak danych o geolokalizacji.");
+            break;
+        case error.UNKNOWN_ERROR:
+            Dialog("Dziwne - jakiś inny błąd geolokalizacji.");
+            break;
+    }
+}
+
+// BIEŻĄCA DATA...."2018-11-03T11:30:00+03:00"
+function getDate () {
+	var d = new Date();
+	var t = d.toISOString().substr(0,11)+d.toLocaleTimeString()
+  	+ d.toString().substr(d.toString().indexOf('+'),3) + ":00";
+	return t;
+}
+
 // AJAX dla jednej zakładki
-function LoadPanel (ktoryTab, Skad, Dokad, Data)
-{
+function LoadPanel (ktoryTab, Skad, Dokad, Data) {
 console.log("LoadPanel "+ktoryTab);
 // usunąłem z beforeSend
 // request.setRequestHeader("X-jd-sign:AnutaDersdwZ9krv3VPTNP85AE94wBlci4v3O8t0AsgnUiD3GbnziQQqy5_5cnyLNT0Gzw7OexOlbtdq_GPFXA");
@@ -144,30 +200,15 @@ $.ajax({
 }
 
 // ON BUTTON CLICK - REFRESH
-function refresh ()
-{
-	$( "#refresh" ).animate({
-          backgroundColor: "#aa0000",
-          color: "#fff"
-        }, 50 );
-
-	var d = new Date();
-	var t = d.toISOString().substr(0,19)
-		+ d.toString().substr(d.toString().indexOf('+'),3) + ":00";  //"2018-11-03T11:30:00+03:00"
-	var skad;	
+function refresh () {
 	if (document.getElementById("radio-1").checked == true)
-		skad = GPS;
-	else
-		skad = D17;
-	
-	LoadPanel ("#tabs-1", skad, G, t);
-	LoadPanel ("#tabs-2", skad, F, t);
-	LoadPanel ("#tabs-3", skad, J, t);
-	
-	$( "#refresh" ).animate({
-          backgroundColor: "#007fff",
-          color: "#fff"
-        }, 50 );
+		UpdateGPS();
+	else {
+		var t = getDate();
+		LoadPanel ("#tabs-1", D17, G, t);
+		LoadPanel ("#tabs-2", D17, F, t);
+		LoadPanel ("#tabs-3", D17, J, t);
+	}	
 }
 
 // PLUGIN RADIO BUTTONSET VERTICAL 
@@ -235,6 +276,8 @@ $(document).ready(function() {
   </div>
 </div>
 
+<div id="dialog" title="UWAGA">
+	<div id="msgtxt"> </div>
 </div>
 
 </body>
