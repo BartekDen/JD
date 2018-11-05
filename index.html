@@ -18,7 +18,7 @@
 <style>
 
 	#mapid { height: 250px; }
-	
+
 	#L {
 		position:absolute;
 		left:5px;
@@ -88,12 +88,10 @@ function Dialog(txt) {
 
 // POBIERA LOKALIZACJĘ GPS I AKTUALIZUJE WYNIKI
 function UpdateGPS() {
-    if (navigator.geolocation) {
-	    navigator.geolocation.getCurrentPosition(setPosition, selectFromMap);	// typowy callback! selectFromMap zamiast showError
-    } else { 
+    if (navigator.geolocation)
+	    navigator.geolocation.getCurrentPosition(setPosition, showError);
+    else
         Dialog("Przeglądarka nie wspiera geolokacji.");
-		selectFromMap();
-    }
 }
 
 // GDY UDA SIĘ LOKALIZACJA GPS - ZAŁADUJ WYNIKI
@@ -124,16 +122,6 @@ function showError(error) {
             break;
     }
 }
-
-// WYBIERZ LOKALIZACJE Z MAPY - ZAŁADUJ WYNIKI
-function selectFromMap () {
-    console.log (loc[GPS][LAT] + " --- " + loc[GPS][LON]);
-	var t = getDate();
-	LoadPanel ("#tabs-1", GPS, G, t);
-	LoadPanel ("#tabs-2", GPS, F, t);
-	LoadPanel ("#tabs-3", GPS, J, t);
-}
-// MAPA XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 
 // BIEŻĄCA DATA...."2018-11-03T11:30:00+03:00"
 function getDate () {
@@ -206,7 +194,25 @@ $.ajax({
 })
 .done(function(response) {
  	console.log(response);
-	$( ktoryTab ).html(response.routes[0].routeDescription);
+	var t = "<div style='line-height: 150%;'>"; // response.routes[0].routeDescription;
+	for (var i=0; i<response.routes[0].routeParts.length; i++) {
+		t += "<b>" + response.routes[0].routeParts[i].startDeparture.dateTime.substr(11,5) + "</b> ";
+		if (response.routes[0].routeParts[i].routePartType != "WALK") {
+			t += " - " + response.routes[0].routeParts[i].targetArrival.dateTime.substr(11,5) + "<br>";
+			t += "<b style='background-color: #007fff; color:white; padding: 4px 4px;'>" 
+				+ response.routes[0].routeParts[i].routeVehicle.routeLine.line.name + "</b> ";
+			var j = response.routes[0].routeParts[i].routeVehicle.stopsEndIndex;
+			t += " " + response.routes[0].routeParts[i].routeVehicle.routeStops[0].lineStop.stopPoint.stopName
+			t += " *" + j.toString() +"P";
+			t += "<br>  @ " + response.routes[0].routeParts[i].routeVehicle.routeStops[j].lineStop.stopPoint.stopName + "<br>";
+		} else {
+			t += " - " + response.routes[0].routeParts[i].targetArrival.dateTime.substr(11,5) + "<br>";
+		}
+		if (i<response.routes[0].routeParts.length-1)
+			t += "<hr>";
+	}
+	t += "</div>";
+	$( ktoryTab ).html(t);
 })
 .fail(function(xhr, status, errorThrown) {
     console.warn( "Wystąpił błąd w połączeniu");
@@ -221,15 +227,16 @@ $.ajax({
 
 // ON BUTTON CLICK - REFRESH
 function refresh () {
+	var skad;
 	if (document.getElementById("radio-1").checked == true)
-		//UpdateGPS();
-		selectFromMap();
-	else {
-		var t = getDate();
-		LoadPanel ("#tabs-1", D17, G, t);
-		LoadPanel ("#tabs-2", D17, F, t);
-		LoadPanel ("#tabs-3", D17, J, t);
-	}	
+		skad = GPS;
+	else
+		skad = D17;
+		
+	var t = getDate();
+	LoadPanel ("#tabs-1", skad, G, t);
+	LoadPanel ("#tabs-2", skad, F, t);
+	LoadPanel ("#tabs-3", skad, J, t);
 }
 
 // PLUGIN RADIO BUTTONSET VERTICAL 
@@ -271,7 +278,7 @@ $(document).ready(function() {
 	<div class="widget">
 		<fieldset class="radios">
 			<div id="vert">
-				<label for="radio-1">mapa</label>
+				<label for="radio-1">Mapa</label>
 				<input type="radio" name="radio-1" id="radio-1">
 				<label for="radio-2">D-17</label>
 				<input type="radio" name="radio-1" id="radio-2" checked>
